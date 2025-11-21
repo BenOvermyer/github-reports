@@ -1,9 +1,106 @@
-
-# Utility functions for GitHub API interaction and charting
 import requests
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+from collections import defaultdict
 
+def issue_resolution_time_data(issues):
+    """Return a list of resolution times (in days) for closed issues."""
+    times = []
+    for issue in issues:
+        if issue.get('closed_at'):
+            created = datetime.strptime(issue['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+            closed = datetime.strptime(issue['closed_at'], '%Y-%m-%dT%H:%M:%SZ')
+            times.append((closed - created).days + (closed - created).seconds/86400)
+    return times
+
+def plot_issue_resolution_time(times, output, chart_type='hist'): 
+    plt.figure(figsize=(10,6))
+    if chart_type == 'hist':
+        plt.hist(times, bins=20, color='skyblue', edgecolor='black')
+        plt.title('Issue Resolution Time Histogram')
+        plt.xlabel('Days to Close')
+        plt.ylabel('Number of Issues')
+    else:
+        plt.boxplot(times, vert=False)
+        plt.title('Issue Resolution Time Boxplot')
+        plt.xlabel('Days to Close')
+    plt.tight_layout()
+    plt.savefig(output)
+def fetch_pull_requests(repo, token, state='all'):
+    """Fetch all pull requests from a GitHub repo."""
+    prs = []
+    page = 1
+    while True:
+        url = f'https://api.github.com/repos/{repo}/pulls'
+        params = {'state': state, 'per_page': 100, 'page': page}
+        batch = github_api_get(url, token, params)
+        if not batch:
+            break
+        prs.extend(batch)
+        page += 1
+    return prs
+
+def pr_activity_timeline_data(prs):
+    """Return weekly counts of PRs opened, closed, and merged."""
+    opened = defaultdict(int)
+    closed = defaultdict(int)
+    merged = defaultdict(int)
+    weeks = set()
+    for pr in prs:
+        if 'created_at' in pr:
+            week = datetime.strptime(pr['created_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%W')
+            opened[week] += 1
+            weeks.add(week)
+        if pr.get('closed_at'):
+            week = datetime.strptime(pr['closed_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%W')
+            closed[week] += 1
+            weeks.add(week)
+        if pr.get('merged_at'):
+            week = datetime.strptime(pr['merged_at'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%W')
+            merged[week] += 1
+            weeks.add(week)
+    week_list = sorted(list(weeks))
+    opened_counts = [opened[w] for w in week_list]
+    closed_counts = [closed[w] for w in week_list]
+    merged_counts = [merged[w] for w in week_list]
+    return week_list, opened_counts, closed_counts, merged_counts
+
+def plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_counts, output):
+    plt.figure(figsize=(12,7))
+    plt.plot(week_list, opened_counts, label='Opened PRs')
+    plt.plot(week_list, closed_counts, label='Closed PRs')
+    plt.plot(week_list, merged_counts, label='Merged PRs')
+    plt.xlabel('Week')
+    plt.ylabel('Count')
+    plt.title('PR Activity Timeline')
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(output)
+def issue_type_breakdown_data(issues):
+    """Return a Counter of issue labels for type breakdown."""
+    from collections import Counter
+    labels = []
+    for issue in issues:
+        labels.extend([l['name'] for l in issue.get('labels', [])])
+    return Counter(labels)
+
+def plot_issue_type_breakdown(counter, output, chart_type='pie'):
+    plt.figure(figsize=(8,8))
+    labels = list(counter.keys())
+    counts = list(counter.values())
+    if chart_type == 'pie':
+        plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=140)
+        plt.title('Issue Type Breakdown (by Label)')
+    else:
+        plt.bar(labels, counts)
+        plt.title('Issue Type Breakdown (by Label)')
+        plt.ylabel('Count')
+        plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(output)
+
+# Utility functions for GitHub API interaction and charting
 def github_api_get(url, token, params=None):
     if token is None or token.strip() == "":
         raise RuntimeError(

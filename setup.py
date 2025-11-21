@@ -11,7 +11,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'github-reports=github_reports.cli:main',
+            'github-reports=cli:main',
         ],
     },
     author='Your Name',

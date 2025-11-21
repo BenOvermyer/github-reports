@@ -2,10 +2,78 @@ import click
 import utils
 from datetime import datetime, timedelta
 
+
 @click.group()
 def main():
-    """GitHub Reports CLI: Generate project management charts from GitHub data."""
-    pass
+        """
+        GitHub Reports CLI: Generate project management charts from GitHub data.
+
+        Available commands:
+            burndown                Generate a burndown chart from issues
+            commit-summary          Generate a weekly commit count summary per user
+            issue-type-breakdown    Generate an issue type breakdown chart (by label)
+            pr-activity-timeline   Generate a PR activity timeline chart (opened/closed/merged per week)
+            issue-resolution-time   Generate a chart of time taken to close issues (histogram/boxplot)
+            # More commands coming soon...
+        """
+        pass
+
+
+@main.command()
+@click.option('--repo', required=True, help='GitHub repository in the form owner/repo')
+@click.option('--token', required=True, help='GitHub personal access token')
+@click.option('--output', default='pr_activity_timeline.png', help='Output file for the chart')
+def pr_activity_timeline(repo, token, output):
+    """Generate a PR activity timeline chart (opened/closed/merged per week)."""
+    try:
+        click.echo(f"Fetching pull requests for {repo}...")
+        prs = utils.fetch_pull_requests(repo, token)
+        click.echo(f"Processing PR activity timeline data...")
+        week_list, opened_counts, closed_counts, merged_counts = utils.pr_activity_timeline_data(prs)
+        click.echo(f"Plotting PR activity timeline chart to {output}...")
+        utils.plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_counts, output)
+        click.echo("PR activity timeline chart generated.")
+    except RuntimeError as e:
+        click.echo(f"Error: {e}")
+
+
+@main.command()
+@click.option('--repo', required=True, help='GitHub repository in the form owner/repo')
+@click.option('--token', required=True, help='GitHub personal access token')
+@click.option('--output', default='issue_resolution_time.png', help='Output file for the chart')
+@click.option('--chart-type', type=click.Choice(['hist', 'box']), default='hist', help='Chart type: hist or box')
+def issue_resolution_time(repo, token, output, chart_type):
+    """Generate an issue resolution time chart (histogram/boxplot of time to close issues)."""
+    try:
+        click.echo(f"Fetching issues for {repo}...")
+        issues = utils.fetch_all_issues(repo, token)
+        click.echo(f"Processing issue resolution time data...")
+        times = utils.issue_resolution_time_data(issues)
+        click.echo(f"Plotting issue resolution time chart to {output}...")
+        utils.plot_issue_resolution_time(times, output, chart_type)
+        click.echo("Issue resolution time chart generated.")
+    except RuntimeError as e:
+        click.echo(f"Error: {e}")
+
+
+@main.command()
+@click.option('--repo', required=True, help='GitHub repository in the form owner/repo')
+@click.option('--token', required=True, help='GitHub personal access token')
+@click.option('--output', default='issue_type_breakdown.png', help='Output file for the chart')
+@click.option('--chart-type', type=click.Choice(['pie', 'bar']), default='pie', help='Chart type: pie or bar')
+def issue_type_breakdown(repo, token, output, chart_type):
+    """Generate an issue type breakdown chart (by label)."""
+    try:
+        click.echo(f"Fetching issues for {repo}...")
+        issues = utils.fetch_all_issues(repo, token)
+        click.echo(f"Processing issue type breakdown data...")
+        counter = utils.issue_type_breakdown_data(issues)
+        click.echo(f"Plotting issue type breakdown chart to {output}...")
+        utils.plot_issue_type_breakdown(counter, output, chart_type)
+        click.echo("Issue type breakdown chart generated.")
+    except RuntimeError as e:
+        click.echo(f"Error: {e}")
+
 
 @main.command()
 @click.option('--repo', required=True, help='GitHub repository in the form owner/repo')
