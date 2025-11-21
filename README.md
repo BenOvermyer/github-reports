@@ -41,16 +41,55 @@ For most use cases, the `repo` scope is recommended. You can generate a PAT at h
    uv pip install -e .
    ```
 
+
 ## Usage
 
+All commands accept a comma-separated list for `--repo` to aggregate data across multiple repositories.
+
 ### Burndown Chart
+Generate a burndown chart of open/closed issues over time:
 ```sh
-github-reports burndown --repo owner/repo --token <your_token> --output burndown.png
+github-reports burndown --repo octocat/Hello-World --token <your_token> --output burndown.png
+github-reports burndown --repo octocat/Hello-World,psf/requests --token <your_token> --output burndown.png
 ```
 
 ### Commit Summary
+Generate a weekly commit count summary per user:
 ```sh
-github-reports commit-summary --repo owner/repo --token <your_token> --months 3 --output commits.png
+github-reports commit-summary --repo octocat/Hello-World --token <your_token> --months 3 --output commits.png
+github-reports commit-summary --repo octocat/Hello-World,psf/requests --token <your_token> --months 6 --output commits.png
+```
+
+### Issue Type Breakdown
+Pie or bar chart of issue labels:
+```sh
+github-reports issue-type-breakdown --repo octocat/Hello-World --token <your_token> --output labels.png --chart-type pie
+github-reports issue-type-breakdown --repo octocat/Hello-World,psf/requests --token <your_token> --output labels.png --chart-type bar
+```
+
+### PR Activity Timeline
+Line chart of PRs opened/closed/merged per week:
+```sh
+github-reports pr-activity-timeline --repo octocat/Hello-World --token <your_token> --output pr_timeline.png
+github-reports pr-activity-timeline --repo octocat/Hello-World,psf/requests --token <your_token> --output pr_timeline.png
+```
+
+### Issue Resolution Time
+Histogram or boxplot of time taken to close issues:
+```sh
+github-reports issue-resolution-time --repo octocat/Hello-World --token <your_token> --output resolution.png --chart-type hist
+github-reports issue-resolution-time --repo octocat/Hello-World,psf/requests --token <your_token> --output resolution.png --chart-type box
+```
+
+## Popular Repository Examples
+
+- `octocat/Hello-World` (GitHub's sample repo)
+- `psf/requests` (Popular Python HTTP library)
+- `django/django` (Popular Python web framework)
+
+You can aggregate across any combination:
+```sh
+github-reports burndown --repo octocat/Hello-World,django/django,psf/requests --token <your_token> --output burndown.png
 ```
 
 ## Development
