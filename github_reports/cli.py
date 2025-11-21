@@ -26,8 +26,9 @@ def main():
 def pr_activity_timeline(repo, token, output):
     """Generate a PR activity timeline chart (opened/closed/merged per week)."""
     try:
-        click.echo(f"Fetching pull requests for {repo}...")
-        prs = utils.fetch_pull_requests(repo, token)
+        repos = [r.strip() for r in repo.split(",")]
+        click.echo(f"Fetching pull requests for {', '.join(repos)}...")
+        prs = utils.fetch_pull_requests_multi(repos, token)
         click.echo(f"Processing PR activity timeline data...")
         week_list, opened_counts, closed_counts, merged_counts = utils.pr_activity_timeline_data(prs)
         click.echo(f"Plotting PR activity timeline chart to {output}...")
@@ -45,8 +46,9 @@ def pr_activity_timeline(repo, token, output):
 def issue_resolution_time(repo, token, output, chart_type):
     """Generate an issue resolution time chart (histogram/boxplot of time to close issues)."""
     try:
-        click.echo(f"Fetching issues for {repo}...")
-        issues = utils.fetch_all_issues(repo, token)
+        repos = [r.strip() for r in repo.split(",")]
+        click.echo(f"Fetching issues for {', '.join(repos)}...")
+        issues = utils.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing issue resolution time data...")
         times = utils.issue_resolution_time_data(issues)
         click.echo(f"Plotting issue resolution time chart to {output}...")
@@ -64,8 +66,9 @@ def issue_resolution_time(repo, token, output, chart_type):
 def issue_type_breakdown(repo, token, output, chart_type):
     """Generate an issue type breakdown chart (by label)."""
     try:
-        click.echo(f"Fetching issues for {repo}...")
-        issues = utils.fetch_all_issues(repo, token)
+        repos = [r.strip() for r in repo.split(",")]
+        click.echo(f"Fetching issues for {', '.join(repos)}...")
+        issues = utils.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing issue type breakdown data...")
         counter = utils.issue_type_breakdown_data(issues)
         click.echo(f"Plotting issue type breakdown chart to {output}...")
@@ -82,8 +85,9 @@ def issue_type_breakdown(repo, token, output, chart_type):
 def burndown(repo, token, output):
     """Generate a burndown chart from issues."""
     try:
-        click.echo(f"Fetching issues for {repo}...")
-        issues = utils.fetch_all_issues(repo, token)
+        repos = [r.strip() for r in repo.split(",")]
+        click.echo(f"Fetching issues for {', '.join(repos)}...")
+        issues = utils.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing burndown data...")
         date_range, open_counts, closed_counts = utils.burndown_data_from_issues(issues)
         click.echo(f"Plotting burndown chart to {output}...")
@@ -100,9 +104,10 @@ def burndown(repo, token, output):
 def commit_summary(repo, token, months, output):
     """Generate a commit count summary per user."""
     try:
-        click.echo(f"Fetching commits for {repo} over last {months} months...")
+        repos = [r.strip() for r in repo.split(",")]
+        click.echo(f"Fetching commits for {', '.join(repos)} over last {months} months...")
         since = datetime.utcnow() - timedelta(days=months*30)
-        commits = utils.fetch_commits(repo, token, since)
+        commits = utils.fetch_commits_multi(repos, token, since)
         click.echo(f"Processing weekly commit summary data...")
         user_week_counts, week_labels = utils.commit_summary_weekly_data(commits)
         click.echo(f"Plotting weekly commit summary chart to {output}...")

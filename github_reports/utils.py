@@ -3,6 +3,31 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from collections import defaultdict
 
+
+def fetch_commits_multi(repos, token, since):
+    """Fetch and aggregate commits from multiple repositories since a given date."""
+    all_commits = []
+    for repo in repos:
+        all_commits.extend(fetch_commits(repo.strip(), token, since))
+    return all_commits
+
+
+def fetch_all_issues_multi(repos, token):
+    """Fetch and aggregate issues from multiple repositories."""
+    all_issues = []
+    for repo in repos:
+        all_issues.extend(fetch_all_issues(repo.strip(), token))
+    return all_issues
+
+
+def fetch_pull_requests_multi(repos, token, state='all'):
+    """Fetch and aggregate pull requests from multiple repositories."""
+    all_prs = []
+    for repo in repos:
+        all_prs.extend(fetch_pull_requests(repo.strip(), token, state))
+    return all_prs
+
+
 def issue_resolution_time_data(issues):
     """Return a list of resolution times (in days) for closed issues."""
     times = []
@@ -12,6 +37,7 @@ def issue_resolution_time_data(issues):
             closed = datetime.strptime(issue['closed_at'], '%Y-%m-%dT%H:%M:%SZ')
             times.append((closed - created).days + (closed - created).seconds/86400)
     return times
+
 
 def plot_issue_resolution_time(times, output, chart_type='hist'): 
     plt.figure(figsize=(10,6))
@@ -26,6 +52,8 @@ def plot_issue_resolution_time(times, output, chart_type='hist'):
         plt.xlabel('Days to Close')
     plt.tight_layout()
     plt.savefig(output)
+
+
 def fetch_pull_requests(repo, token, state='all'):
     """Fetch all pull requests from a GitHub repo."""
     prs = []
@@ -39,6 +67,7 @@ def fetch_pull_requests(repo, token, state='all'):
         prs.extend(batch)
         page += 1
     return prs
+
 
 def pr_activity_timeline_data(prs):
     """Return weekly counts of PRs opened, closed, and merged."""
@@ -65,6 +94,7 @@ def pr_activity_timeline_data(prs):
     merged_counts = [merged[w] for w in week_list]
     return week_list, opened_counts, closed_counts, merged_counts
 
+
 def plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_counts, output):
     plt.figure(figsize=(12,7))
     plt.plot(week_list, opened_counts, label='Opened PRs')
@@ -77,6 +107,8 @@ def plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_co
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.savefig(output)
+
+
 def issue_type_breakdown_data(issues):
     """Return a Counter of issue labels for type breakdown."""
     from collections import Counter
@@ -84,6 +116,7 @@ def issue_type_breakdown_data(issues):
     for issue in issues:
         labels.extend([l['name'] for l in issue.get('labels', [])])
     return Counter(labels)
+
 
 def plot_issue_type_breakdown(counter, output, chart_type='pie'):
     plt.figure(figsize=(8,8))
@@ -99,6 +132,7 @@ def plot_issue_type_breakdown(counter, output, chart_type='pie'):
         plt.xticks(rotation=45)
     plt.tight_layout()
     plt.savefig(output)
+
 
 # Utility functions for GitHub API interaction and charting
 def github_api_get(url, token, params=None):
@@ -130,6 +164,7 @@ def github_api_get(url, token, params=None):
             raise RuntimeError(f"GitHub API error: {response.status_code} {response.reason}") from e
     return response.json()
 
+
 def fetch_all_issues(repo, token):
     """Fetch all issues (open and closed) from a GitHub repo."""
     issues = []
@@ -144,6 +179,7 @@ def fetch_all_issues(repo, token):
         page += 1
     return issues
 
+
 def fetch_commits(repo, token, since):
     """Fetch commits since a given date from a GitHub repo."""
     commits = []
@@ -157,6 +193,7 @@ def fetch_commits(repo, token, since):
         commits.extend(batch)
         page += 1
     return commits
+
 
 def burndown_data_from_issues(issues):
     """Return daily open/closed issue counts for burndown chart."""
@@ -177,6 +214,7 @@ def burndown_data_from_issues(issues):
         open_counts.append(open_count)
         closed_counts.append(closed_count)
     return date_range, open_counts, closed_counts
+
 
 def plot_burndown(date_range, open_counts, closed_counts, output):
     plt.figure(figsize=(10,6))
