@@ -2,12 +2,6 @@
 
 A Python CLI tool to generate project management charts (burndown, commit summaries, and more) from GitHub repositories using the GitHub REST API.
 
-## Features
-- **Burndown Chart**: Visualize open/closed issues over time.
-- **Commit Summary**: See commit counts per user for the last X months.
-- **Extensible**: Add more charts as needed.
-
-
 ## Requirements
 - Python 3.12+
 - [uv (Astral)](https://github.com/astral-sh/uv) for dependency management and running
@@ -96,6 +90,3 @@ github-reports burndown --repo octocat/Hello-World,django/django,psf/requests --
 - All dependencies are managed with `uv`.
 - CLI entry point: `github_reports/cli.py`
 - Utility functions: `github_reports/utils.py`
-
-## License
-MIT
