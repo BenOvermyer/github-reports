@@ -1,5 +1,6 @@
 import requests
 import matplotlib.pyplot as plt
+import textwrap
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -39,16 +40,21 @@ def issue_resolution_time_data(issues):
     return times
 
 
-def plot_issue_resolution_time(times, output, chart_type='hist'): 
+def plot_issue_resolution_time(times, output, chart_type='hist', repo_name=None): 
     plt.figure(figsize=(10,6))
+    title = 'Issue Resolution Time Histogram' if chart_type == 'hist' else 'Issue Resolution Time Boxplot'
+    if repo_name:
+        title += f' - {repo_name}'
+    title = "\n".join(textwrap.wrap(title, width=60))
+    
     if chart_type == 'hist':
         plt.hist(times, bins=20, color='skyblue', edgecolor='black')
-        plt.title('Issue Resolution Time Histogram')
+        plt.title(title)
         plt.xlabel('Days to Close')
         plt.ylabel('Number of Issues')
     else:
         plt.boxplot(times, vert=False)
-        plt.title('Issue Resolution Time Boxplot')
+        plt.title(title)
         plt.xlabel('Days to Close')
     plt.tight_layout()
     plt.savefig(output)
@@ -95,14 +101,17 @@ def pr_activity_timeline_data(prs):
     return week_list, opened_counts, closed_counts, merged_counts
 
 
-def plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_counts, output):
+def plot_pr_activity_timeline(week_list, opened_counts, closed_counts, merged_counts, output, repo_name=None):
     plt.figure(figsize=(12,7))
     plt.plot(week_list, opened_counts, label='Opened PRs')
     plt.plot(week_list, closed_counts, label='Closed PRs')
     plt.plot(week_list, merged_counts, label='Merged PRs')
     plt.xlabel('Week')
     plt.ylabel('Count')
-    plt.title('PR Activity Timeline')
+    title = 'PR Activity Timeline'
+    if repo_name:
+        title += f' - {repo_name}'
+    plt.title("\n".join(textwrap.wrap(title, width=60)))
     plt.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -118,16 +127,21 @@ def issue_type_breakdown_data(issues):
     return Counter(labels)
 
 
-def plot_issue_type_breakdown(counter, output, chart_type='pie'):
+def plot_issue_type_breakdown(counter, output, chart_type='pie', repo_name=None):
     plt.figure(figsize=(8,8))
     labels = list(counter.keys())
     counts = list(counter.values())
+    title = 'Issue Type Breakdown (by Label)'
+    if repo_name:
+        title += f' - {repo_name}'
+    title = "\n".join(textwrap.wrap(title, width=60))
+
     if chart_type == 'pie':
         plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=140)
-        plt.title('Issue Type Breakdown (by Label)')
+        plt.title(title)
     else:
         plt.bar(labels, counts)
-        plt.title('Issue Type Breakdown (by Label)')
+        plt.title(title)
         plt.ylabel('Count')
         plt.xticks(rotation=45)
     plt.tight_layout()
@@ -216,13 +230,16 @@ def burndown_data_from_issues(issues):
     return date_range, open_counts, closed_counts
 
 
-def plot_burndown(date_range, open_counts, closed_counts, output):
+def plot_burndown(date_range, open_counts, closed_counts, output, repo_name=None):
     plt.figure(figsize=(10,6))
     plt.plot(date_range, open_counts, label='Open Issues')
     plt.plot(date_range, closed_counts, label='Closed Issues')
     plt.xlabel('Date')
     plt.ylabel('Issue Count')
-    plt.title('Burndown Chart')
+    title = 'Burndown Chart'
+    if repo_name:
+        title += f' - {repo_name}'
+    plt.title("\n".join(textwrap.wrap(title, width=60)))
     plt.legend()
     plt.tight_layout()
     plt.savefig(output)
@@ -260,7 +277,7 @@ def commit_summary_weekly_data(commits):
     return user_week_counts, week_labels
 
 
-def plot_commit_summary_weekly(user_week_counts, week_labels, output):
+def plot_commit_summary_weekly(user_week_counts, week_labels, output, repo_name=None):
     import numpy as np
     users = list(user_week_counts.keys())
     weeks = len(week_labels)
@@ -273,7 +290,10 @@ def plot_commit_summary_weekly(user_week_counts, week_labels, output):
         bottom += np.array(counts)
     plt.xlabel('Week Starting')
     plt.ylabel('Commits')
-    plt.title('Weekly Commit Summary per User')
+    title = 'Weekly Commit Summary per User'
+    if repo_name:
+        title += f' - {repo_name}'
+    plt.title("\n".join(textwrap.wrap(title, width=60)))
     plt.xticks(x, week_labels, rotation=45)
     plt.legend()
     plt.tight_layout()
