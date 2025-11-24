@@ -1,6 +1,6 @@
 import click
 import utils
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 @click.group()
@@ -111,7 +111,7 @@ def commit_summary(repo, token, months, output):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching commits for {repo_name} over last {months} months...")
-        since = datetime.utcnow() - timedelta(days=months*30)
+        since = datetime.now(timezone.utc) - timedelta(days=months*30)
         commits = utils.fetch_commits_multi(repos, token, since)
         click.echo(f"Processing weekly commit summary data...")
         user_week_counts, week_labels = utils.commit_summary_weekly_data(commits)
