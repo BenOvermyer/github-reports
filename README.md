@@ -35,6 +35,27 @@ For most use cases, the `repo` scope is recommended. You can generate a PAT at h
    uv pip install -e .
    ```
 
+## Building a Standalone Binary
+
+To build a standalone executable that can be distributed or added to your PATH without requiring a Python environment:
+
+1. Run the publish script:
+   ```sh
+   ./publish.sh
+   ```
+
+2. The binary will be created at `dist/github-reports`.
+
+3. You can move this binary to a directory in your PATH (e.g., `~/.local/bin` or `/usr/local/bin`):
+   ```sh
+   mv dist/github-reports ~/.local/bin/
+   ```
+
+4. Now you can run the tool from anywhere:
+   ```sh
+   github-reports --help
+   ```
+
 
 ## Usage
 
