@@ -1,5 +1,6 @@
 import click
 import utils
+import github_api
 from datetime import datetime, timedelta, timezone
 
 
@@ -29,7 +30,7 @@ def pr_activity_timeline(repo, token, output):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching pull requests for {repo_name}...")
-        prs = utils.fetch_pull_requests_multi(repos, token)
+        prs = github_api.fetch_pull_requests_multi(repos, token)
         click.echo(f"Processing PR activity timeline data...")
         week_list, opened_counts, closed_counts, merged_counts = utils.pr_activity_timeline_data(prs)
         click.echo(f"Plotting PR activity timeline chart to {output}...")
@@ -50,7 +51,7 @@ def issue_resolution_time(repo, token, output, chart_type):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching issues for {repo_name}...")
-        issues = utils.fetch_all_issues_multi(repos, token)
+        issues = github_api.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing issue resolution time data...")
         times = utils.issue_resolution_time_data(issues)
         click.echo(f"Plotting issue resolution time chart to {output}...")
@@ -71,7 +72,7 @@ def issue_type_breakdown(repo, token, output, chart_type):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching issues for {repo_name}...")
-        issues = utils.fetch_all_issues_multi(repos, token)
+        issues = github_api.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing issue type breakdown data...")
         counter = utils.issue_type_breakdown_data(issues)
         click.echo(f"Plotting issue type breakdown chart to {output}...")
@@ -91,7 +92,7 @@ def burndown(repo, token, output):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching issues for {repo_name}...")
-        issues = utils.fetch_all_issues_multi(repos, token)
+        issues = github_api.fetch_all_issues_multi(repos, token)
         click.echo(f"Processing burndown data...")
         date_range, open_counts, closed_counts = utils.burndown_data_from_issues(issues)
         click.echo(f"Plotting burndown chart to {output}...")
@@ -111,8 +112,8 @@ def commit_summary(repo, token, months, output):
         repos = [r.strip() for r in repo.split(",")]
         repo_name = ", ".join(repos)
         click.echo(f"Fetching commits for {repo_name} over last {months} months...")
-        since = datetime.now(timezone.utc) - timedelta(days=months*30)
-        commits = utils.fetch_commits_multi(repos, token, since)
+        since = (datetime.now(timezone.utc) - timedelta(days=months*30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        commits = github_api.fetch_commits_multi(repos, token, since)
         click.echo(f"Processing weekly commit summary data...")
         user_week_counts, week_labels = utils.commit_summary_weekly_data(commits)
         click.echo(f"Plotting weekly commit summary chart to {output}...")

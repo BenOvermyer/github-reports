@@ -11,3 +11,9 @@ wheels/
 
 # Output
 *.png
+
+# Cache files
+.cache
+
+# Unique scripts
+mun.sh

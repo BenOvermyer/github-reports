@@ -1,32 +1,7 @@
-import requests
 import matplotlib.pyplot as plt
 import textwrap
 from datetime import datetime, timedelta
 from collections import defaultdict
-
-
-def fetch_commits_multi(repos, token, since):
-    """Fetch and aggregate commits from multiple repositories since a given date."""
-    all_commits = []
-    for repo in repos:
-        all_commits.extend(fetch_commits(repo.strip(), token, since))
-    return all_commits
-
-
-def fetch_all_issues_multi(repos, token):
-    """Fetch and aggregate issues from multiple repositories."""
-    all_issues = []
-    for repo in repos:
-        all_issues.extend(fetch_all_issues(repo.strip(), token))
-    return all_issues
-
-
-def fetch_pull_requests_multi(repos, token, state='all'):
-    """Fetch and aggregate pull requests from multiple repositories."""
-    all_prs = []
-    for repo in repos:
-        all_prs.extend(fetch_pull_requests(repo.strip(), token, state))
-    return all_prs
 
 
 def issue_resolution_time_data(issues):
@@ -58,21 +33,6 @@ def plot_issue_resolution_time(times, output, chart_type='hist', repo_name=None)
         plt.xlabel('Days to Close')
     plt.tight_layout()
     plt.savefig(output)
-
-
-def fetch_pull_requests(repo, token, state='all'):
-    """Fetch all pull requests from a GitHub repo."""
-    prs = []
-    page = 1
-    while True:
-        url = f'https://api.github.com/repos/{repo}/pulls'
-        params = {'state': state, 'per_page': 100, 'page': page}
-        batch = github_api_get(url, token, params)
-        if not batch:
-            break
-        prs.extend(batch)
-        page += 1
-    return prs
 
 
 def pr_activity_timeline_data(prs):
@@ -148,67 +108,6 @@ def plot_issue_type_breakdown(counter, output, chart_type='pie', repo_name=None)
     plt.savefig(output)
 
 
-# Utility functions for GitHub API interaction and charting
-def github_api_get(url, token, params=None):
-    if token is None or token.strip() == "":
-        raise RuntimeError(
-            "GitHub token is missing. Please provide a valid personal access token."
-        )
-    headers = {'Authorization': f'Bearer {token}'}
-    response = requests.get(url, headers=headers, params=params)
-    try:
-        response.raise_for_status()
-    except requests.HTTPError as e:
-        if response.status_code == 404:
-            raise RuntimeError(
-                f"Repository not found or access denied. "
-                f"Check that the repository name is correct and that your token has access to private repositories (scope: 'repo')."
-            ) from e
-        elif response.status_code == 401:
-            raise RuntimeError(
-                f"Unauthorized. Your token may be invalid or missing required scopes. "
-                f"Check your token permissions and try again."
-            ) from e
-        elif response.status_code == 403:
-            raise RuntimeError(
-                f"Forbidden. You may not have permission to access this resource, or you have hit a rate limit. "
-                f"Check your token permissions and GitHub API rate limits."
-            ) from e
-        else:
-            raise RuntimeError(f"GitHub API error: {response.status_code} {response.reason}") from e
-    return response.json()
-
-
-def fetch_all_issues(repo, token):
-    """Fetch all issues (open and closed) from a GitHub repo."""
-    issues = []
-    page = 1
-    while True:
-        url = f'https://api.github.com/repos/{repo}/issues'
-        params = {'state': 'all', 'per_page': 100, 'page': page}
-        batch = github_api_get(url, token, params)
-        if not batch:
-            break
-        issues.extend(batch)
-        page += 1
-    return issues
-
-
-def fetch_commits(repo, token, since):
-    """Fetch commits since a given date from a GitHub repo."""
-    commits = []
-    page = 1
-    while True:
-        url = f'https://api.github.com/repos/{repo}/commits'
-        params = {'since': since.isoformat(), 'per_page': 100, 'page': page}
-        batch = github_api_get(url, token, params)
-        if not batch:
-            break
-        commits.extend(batch)
-        page += 1
-    return commits
-
-
 def burndown_data_from_issues(issues):
     """Return daily open/closed issue counts for burndown chart."""
     if not issues:
@@ -221,21 +120,29 @@ def burndown_data_from_issues(issues):
     date_range = [start + timedelta(days=i) for i in range(days)]
     open_counts = []
     closed_counts = []
+    total_issues = len(issues)
+    closed_so_far = 0
     for d in date_range:
-        # Cumulative sum of issues opened up to and including this date
-        open_count = sum(1 for i in issues if datetime.strptime(i['created_at'], '%Y-%m-%dT%H:%M:%SZ') <= d)
-        closed_count = sum(1 for i in issues if i.get('closed_at') and datetime.strptime(i['closed_at'], '%Y-%m-%dT%H:%M:%SZ') <= d)
+        closed_on_day = sum(1 for i in issues if i.get('closed_at') and datetime.strptime(i['closed_at'], '%Y-%m-%dT%H:%M:%SZ').date() == d.date())
+        closed_so_far += closed_on_day
+        open_count = total_issues - closed_so_far  # Remaining open issues
         open_counts.append(open_count)
-        closed_counts.append(closed_count)
+        closed_counts.append(closed_on_day)
     return date_range, open_counts, closed_counts
 
 
 def plot_burndown(date_range, open_counts, closed_counts, output, repo_name=None):
     plt.figure(figsize=(10,6))
-    plt.plot(date_range, open_counts, label='Open Issues')
-    plt.plot(date_range, closed_counts, label='Closed Issues')
+    # Actual work line: remaining open issues per day
+    plt.plot(date_range, open_counts, label='Actual Work (Remaining Open Issues)', color='blue')
+
+    # Ideal line: straight line from initial total to zero
+    initial_total = open_counts[0] if open_counts else 0
+    ideal_line = [initial_total - (initial_total * i / (len(date_range)-1)) for i in range(len(date_range))] if len(date_range) > 1 else [initial_total]
+    plt.plot(date_range, ideal_line, label='Ideal (To Zero)', color='red', linestyle='dotted')
+
     plt.xlabel('Date')
-    plt.ylabel('Issue Count')
+    plt.ylabel('Remaining Issues')
     title = 'Burndown Chart'
     if repo_name:
         title += f' - {repo_name}'
